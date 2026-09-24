@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CANDELA – Work Menu | Barceló Málaga</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0e0d;
+      --surface: #1a1815;
+      --text: #e8e0d0;
+      --muted: #7a7060;
+    }
+    body {
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100vh;
+      padding: 1.5rem 4rem;
+      overflow: hidden;
+    }
+    #book-wrap {
+      position: relative;
+      width: min(90vw, 1150px);
+      aspect-ratio: 1.414;
+      perspective: 2500px;
+      transition: transform 0.85s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+    }
+    #book-wrap.is-cover {
+      transform: translateX(-25%);
+    }
+    #book-wrap.is-back {
+      transform: translateX(25%);
+    }
+    #book-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 4px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.07);
+      pointer-events: none;
+      z-index: 30;
+      transition: left 0.85s cubic-bezier(0.645, 0.045, 0.355, 1.000),
+                  right 0.85s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+    }
+    #book-wrap.is-cover::before {
+      left: 50%;
+      right: -6px;
+      border-radius: 2px 5px 5px 2px;
+    }
+    #book-wrap.is-back::before {
+      left: -6px;
+      right: 50%;
+      border-radius: 5px 2px 2px 5px;
+    }
+
+    #left-display, #right-display {
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      overflow: visible;
+      cursor: pointer;
+      background: #151412;
+    }
+    #left-display {
+      left: 0;
+      box-shadow: inset -15px 0 30px rgba(0,0,0,.35);
+    }
+    #right-display {
+      right: 0;
+      box-shadow: inset 15px 0 30px rgba(0,0,0,.35);
+    }
+    #book-wrap.is-cover #right-display {
+      box-shadow: inset 8px 0 24px rgba(0,0,0,.45);
+    }
+    #book-wrap.is-back #left-display {
+      box-shadow: inset -8px 0 24px rgba(0,0,0,.45);
+    }
+    #left-display img, #right-display img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    #book-wrap.is-cover #left-display {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #book-wrap.is-back #right-display {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .page {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transform-origin: left center;
+      transition: transform 0.85s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+      z-index: 25;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .page .front, .page .back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow: hidden;
+      background: #151412;
+    }
+    .page .front img, .page .back img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .page .back {
+      transform: rotateY(180deg);
+    }
+    .page.turned {
+      transform: rotateY(-180deg);
+    }
+    .page::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 100%);
+      opacity: 0;
+      transition: opacity 0.85s;
+      pointer-events: none;
+      backface-visibility: hidden;
+    }
+    .page.flipping::after {
+      opacity: 1;
+    }
+
+    .arrow-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.75);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      line-height: 1;
+      transition: color .2s, transform .15s, opacity .25s;
+      z-index: 40;
+      user-select: none;
+    }
+    .arrow-btn:hover {
+      color: #fff;
+      transform: translateY(-50%) scale(1.15);
+    }
+    .arrow-btn:active {
+      transform: translateY(-50%) scale(.9);
+    }
+    .arrow-btn:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #btn-prev { left: 1.2rem; }
+    #btn-next { right: 1.2rem; }
+
+    .hotspot-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .nav-hotspot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      z-index: 21;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 640px) {
+      #stage { padding: 1rem 2rem; }
+      .arrow-btn { width: 38px; height: 38px; font-size: 1.5rem; }
+      #btn-prev { left: .4rem; }
+      #btn-next { right: .4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="stage">
+  <button class="arrow-btn" id="btn-prev" aria-label="Previous page">&#8592;</button>
+  <div id="book-wrap" class="is-cover">
+    <div id="left-display">
+      <img id="left-img" src="" alt="Left page" />
+    </div>
+    <div id="right-display">
+      <img id="right-img" src="" alt="Right page" />
+    </div>
+    <div class="page" id="flip-page">
+      <div class="front"><img id="flip-front" src="" alt="" /></div>
+      <div class="back"><img id="flip-back" src="" alt="" /></div>
+    </div>
+  </div>
+  <button class="arrow-btn" id="btn-next" aria-label="Next page">&#8594;</button>
+</div>
+
+<script>
+  const TOTAL = 12;
+  const FOLDER = 'AF 240926 ING DOSSIER GASTRONÓMICO Work Menu';
+  const IMG_PATH = n => encodeURI(`${FOLDER}/${n}.jpg`);
+  const HOTSPOTS = {};
+
+  function buildSpreads() {
+    const list = [];
+    list.push({ type: 'cover', left: null, right: 1 });
+    for (let p = 2; p <= TOTAL - 1; p += 2) {
+      list.push({ type: 'double', left: p, right: p + 1 <= TOTAL ? p + 1 : null });
+    }
+    list.push({ type: 'back', left: TOTAL, right: null });
+    return list;
+  }
+
+  const SPREADS = buildSpreads();
+  const maxSpread = SPREADS.length - 1;
+  let spread = 0;
+  let animating = false;
+
+  const bookWrap     = document.getElementById('book-wrap');
+  const leftDisplay  = document.getElementById('left-display');
+  const rightDisplay = document.getElementById('right-display');
+  const leftImg      = document.getElementById('left-img');
+  const rightImg     = document.getElementById('right-img');
+  const flipPage     = document.getElementById('flip-page');
+  const flipFront    = document.getElementById('flip-front');
+  const flipBack     = document.getElementById('flip-back');
+  const btnPrev      = document.getElementById('btn-prev');
+  const btnNext      = document.getElementById('btn-next');
+
+  function safeImg(n) {
+    return (n >= 1 && n <= TOTAL) ? IMG_PATH(n) : '';
+  }
+
+  function goToPage(targetPage) {
+    for (let i = 0; i < SPREADS.length; i++) {
+      const sp = SPREADS[i];
+      if (sp.left === targetPage || sp.right === targetPage) {
+        if (spread !== i && !animating) {
+          spread = i;
+          updateDisplay(spread);
+        }
+        break;
+      }
+    }
+  }
+
+  function renderHotspots(container, pageNum) {
+    container.querySelectorAll('.hotspot-layer').forEach(el => el.remove());
+    if (!pageNum || !HOTSPOTS[pageNum]) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'hotspot-layer';
+
+    HOTSPOTS[pageNum].forEach(h => {
+      const el = document.createElement('div');
+      el.className = 'nav-hotspot';
+      el.title = h.label || `Go to page ${h.page}`;
+      el.style.left = `${h.x}%`;
+      el.style.top = `${h.y}%`;
+      el.style.width = `${h.w}%`;
+      el.style.height = `${h.h}%`;
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        goToPage(h.page);
+      });
+      layer.appendChild(el);
+    });
+
+    container.appendChild(layer);
+  }
+
+  function updateDisplay(s) {
+    const item = SPREADS[s];
+    leftDisplay.style.display = 'block';
+    rightDisplay.style.display = 'block';
+
+    if (item.left) {
+      leftImg.src = safeImg(item.left);
+      leftDisplay.style.visibility = 'visible';
+      renderHotspots(leftDisplay, item.left);
+    } else {
+      leftImg.src = '';
+      leftDisplay.style.visibility = 'hidden';
+      renderHotspots(leftDisplay, null);
+    }
+
+    if (item.right) {
+      rightImg.src = safeImg(item.right);
+      rightDisplay.style.visibility = 'visible';
+      renderHotspots(rightDisplay, item.right);
+    } else {
+      rightImg.src = '';
+      rightDisplay.style.visibility = 'hidden';
+      renderHotspots(rightDisplay, null);
+    }
+
+    if (item.type === 'cover') {
+      bookWrap.classList.add('is-cover');
+      bookWrap.classList.remove('is-back');
+    } else if (item.type === 'back') {
+      bookWrap.classList.add('is-back');
+      bookWrap.classList.remove('is-cover');
+    } else {
+      bookWrap.classList.remove('is-cover', 'is-back');
+    }
+
+    btnPrev.disabled = (s <= 0);
+    btnNext.disabled = (s >= maxSpread);
+  }
+
+  function flipForward() {
+    if (animating || spread >= maxSpread) return;
+    animating = true;
+    const ns = spread + 1;
+    const curr = SPREADS[spread];
+    const next = SPREADS[ns];
+
+    flipFront.src = safeImg(curr.right);
+    flipBack.src  = safeImg(next.left);
+
+    if (next.right) {
+      rightImg.src = safeImg(next.right);
+      rightDisplay.style.visibility = 'visible';
+    } else {
+      rightImg.src = '';
+      rightDisplay.style.visibility = 'hidden';
+    }
+
+    if (spread === 0) leftDisplay.style.visibility = 'hidden';
+    else leftDisplay.style.visibility = 'visible';
+
+    flipPage.style.transition = 'none';
+    flipPage.classList.remove('turned');
+    flipPage.style.visibility = 'visible';
+    void flipPage.offsetWidth;
+
+    if (spread === 0) bookWrap.classList.remove('is-cover');
+    if (next.type === 'back') bookWrap.classList.add('is-back');
+
+    flipPage.style.transition = '';
+    flipPage.classList.add('flipping');
+    requestAnimationFrame(() => flipPage.classList.add('turned'));
+
+    flipPage.addEventListener('transitionend', function h(e) {
+      if (e.target !== flipPage) return;
+      flipPage.removeEventListener('transitionend', h);
+      flipPage.style.transition = 'none';
+      flipPage.classList.remove('flipping');
+      flipPage.classList.remove('turned');
+      flipPage.style.visibility = 'hidden';
+      spread = ns;
+      updateDisplay(spread);
+      animating = false;
+    });
+  }
+
+  function flipBackward() {
+    if (animating || spread <= 0) return;
+    animating = true;
+    const ps = spread - 1;
+    const curr = SPREADS[spread];
+    const prev = SPREADS[ps];
+
+    flipBack.src  = safeImg(curr.left);
+    flipFront.src = safeImg(prev.right);
+
+    if (prev.left) {
+      leftImg.src = safeImg(prev.left);
+      leftDisplay.style.visibility = 'visible';
+    } else {
+      leftImg.src = '';
+      leftDisplay.style.visibility = 'hidden';
+    }
+
+    if (curr.right) rightDisplay.style.visibility = 'visible';
+
+    flipPage.style.transition = 'none';
+    flipPage.classList.add('turned');
+    flipPage.style.visibility = 'visible';
+    void flipPage.offsetWidth;
+
+    if (prev.type === 'cover') bookWrap.classList.add('is-cover');
+    if (spread === maxSpread) bookWrap.classList.remove('is-back');
+
+    flipPage.style.transition = '';
+    flipPage.classList.add('flipping');
+    requestAnimationFrame(() => flipPage.classList.add('turned'));
+
+    flipPage.addEventListener('transitionend', function h(e) {
+      if (e.target !== flipPage) return;
+      flipPage.removeEventListener('transitionend', h);
+      flipPage.style.transition = 'none';
+      flipPage.classList.remove('flipping');
+      flipPage.classList.remove('turned');
+      flipPage.style.visibility = 'hidden';
+      spread = ps;
+      updateDisplay(spread);
+      animating = false;
+    });
+  }
+
+  btnNext.addEventListener('click', flipForward);
+  btnPrev.addEventListener('click', flipBackward);
+  rightDisplay.addEventListener('click', flipForward);
+  leftDisplay.addEventListener('click', flipBackward);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') flipForward();
+    if (e.key === 'ArrowLeft') flipBackward();
+    if (e.key === 'Home') { spread = 0; updateDisplay(spread); }
+    if (e.key === 'End') { spread = maxSpread; updateDisplay(spread); }
+  });
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) {
+      dx < 0 ? flipForward() : flipBackward();
+    }
+  });
+
+  updateDisplay(spread);
+</script>
+</body>
+</html>
